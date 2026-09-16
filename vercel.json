@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/finish-retrospectives",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/disable-anonymous-users",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

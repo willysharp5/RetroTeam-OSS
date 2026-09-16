@@ -1,0 +1,159 @@
+/* Start purging... */
+@tailwind components;
+
+@layer components {
+    /* Global Link Style */
+    a {
+        @apply outline-primary-200 outline-2 active:outline-none;
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:active,
+    input:-webkit-autofill:focus {
+        @apply border-none m-[-1px] shadow-sm;
+    }
+
+    /* Documentation */
+    .DocumentationSidebarContainer {
+        @apply mt-6 sticky inset-0 hidden md:flex overflow-y-auto h-screen;
+    }
+
+    .DocumentationSidebarItem {
+        @apply flex active:bg-gray-100 flex-1
+        text-sm text-gray-500  hover:text-current rounded-md
+        py-1.5 px-2 transition-colors duration-300 w-full;
+    }
+
+    .DocumentationSidebarItemContainer:last-child {
+        @apply pb-24;
+    }
+
+    .DocumentationSidebarItemSelected {
+        @apply font-semibold text-current  bg-primary-500/5;
+    }
+
+    .DocumentationSidebarItemNotSelected {
+        @apply hover:border-l-primary-400 
+       font-medium border-l-gray-50;
+    }
+
+    .Toggle {
+        @apply h-6 w-12 cursor-pointer appearance-none
+        bg-gray-600  duration-300 ease-in-out rounded-xl;
+
+        transition: all 0.25s ease-in-out;
+        box-shadow: calc(1.5rem * -1) 0 0 2px #efefef inset, 0 0 0 2px #efefef inset;
+    }
+
+    .dark .Toggle {
+        box-shadow: calc(1.5rem * -1) 0 0 2px #525252 inset, 0 0 0 2px #525252 inset;
+    }
+
+    .Toggle:hover {
+        box-shadow: calc(1.5rem * -1) 0 0 2px #ddd inset, 0 0 0 2px #ddd inset;
+    }
+
+    .dark .Toggle:hover {
+        box-shadow: calc(1.5rem * -1) 0 0 2px #666 inset, 0 0 0 2px #666 inset;
+    }
+
+    .Toggle:focus-visible {
+        @apply outline outline-primary-500;
+
+        outline-offset: 2px;
+    }
+
+    .Toggle:checked {
+        @apply border-opacity-100 bg-opacity-100
+        bg-primary-500 border-primary-400;
+
+        box-shadow: 1.5rem 0 0 2px #eee inset, 0 0 0 2px #eee inset;
+    }
+
+    .dark .Toggle:checked {
+        box-shadow: 1.5rem 0 0 2px #444 inset, 0 0 0 2px #444 inset;
+    }
+
+    .Stepper {
+        @apply flex flex-col md:flex-row md:space-x-2 justify-between shadow-sm
+        px-2 py-1 rounded-md;
+    }
+
+    .StepperDivider {
+        @apply flex bg-gray-300 h-full
+        ml-[1.5rem] md:ml-0 min-h-[8px] md:min-h-0 w-[2px] md:w-full md:h-[2px]
+        flex-1 transition-colors md:self-center;
+    }
+
+    .StepperDivider:last-child {
+        display: none;
+    }
+
+    .StepperStepSelected + .StepperDivider,
+    .StepperStep.CompletedStep + .StepperDivider {
+        @apply bg-primary-500 text-primary-contrast;
+    }
+
+    .StepperStep:not(.StepperStepSelected):not(.CompletedStep):hover + .StepperDivider {
+        @apply bg-primary-500/40;
+    }
+
+    .StepperStepCircle {
+        @apply rounded-full w-[35px] h-[35px] shadow duration-150
+        font-bold flex justify-center items-center shadow-none
+        bg-gray-200 transition-colors;
+    }
+
+    .StepperStep.StepperStepSelected {
+        @apply text-gray-600;
+    }
+
+    .StepperStepSelected .StepperStepCircle {
+        @apply bg-primary-500 text-white;
+    }
+
+    .StepperStep {
+        @apply flex items-center space-x-4 text-gray-600
+        transition-colors p-2 cursor-default outline-none;
+    }
+
+    .StepperStep.StepperStepActionable.StepperStepClickable:not(.StepperStepSelected):not([disabled]):hover {
+        @apply text-gray-600 cursor-pointer;
+    }
+
+    .StepperStep.StepperStepActionable.StepperStepClickable:not(.StepperStepSelected):not([disabled]):hover .StepperStepCircle {
+        @apply bg-primary-500 text-primary-contrast;
+    }
+
+    .StepperStep:not(.StepperStepSelected):disabled,
+    .StepperStep:not(.Actionable):not(.StepperStepSelected) {
+        @apply text-gray-400;
+    }
+
+    .Table {
+        @apply bg-white p-1 w-full border-collapse rounded-lg table-fixed border-spacing-0;
+    }
+
+    .Table thead {
+        @apply sticky top-0 m-0 bg-white;
+    }
+
+    .Table th {
+        @apply text-left py-4 uppercase font-bold text-gray-600
+        text-xs border-b border-gray-200;
+    }
+
+    .Table tr {
+        @apply border-b border-gray-100;
+    }
+
+    .Table tr:last-child {
+        @apply border-transparent;
+    }
+
+    .Table td {
+        @apply py-2.5 text-sm;
+    }
+}
+/* Stop purging. */

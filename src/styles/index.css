@@ -1,0 +1,73 @@
+@import "components.css";
+@tailwind base;
+
+/* Start purging... */
+@tailwind utilities;
+/* Stop purging. */
+
+body {
+  text-rendering: geometricPrecision;
+
+  @apply bg-white text-gray-800 font-sans antialiased;
+}
+
+.hero-image-shadow {
+  box-shadow: 0 0 800px 0 var(--tw-shadow-color);
+}
+
+.rti--container {
+  --rti-main: "#F97316" !important;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #c2c2c2;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #c3c3c3;
+}
+
+/*
+We hide the emulator warning at the bottom of the page.
+Please remove the following class if you want to display it
+ */
+.firebase-emulator-warning {
+  display: none;
+}
+
+@layer base {
+
+  #no-spinners::-webkit-inner-spin-button,
+  #no-spinners::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+}
+
+.Mui-selected {
+  background-color: black !important;
+  font-weight: 600 !important;
+  border-radius: .5rem !important;
+}
+.MuiButtonBase-root{
+  border-radius: .5rem !important;
+  font-weight: 600 !important;
+}
+
+.MuiDayCalendar-weekDayLabel{
+  font-weight: 600 !important;
+}
