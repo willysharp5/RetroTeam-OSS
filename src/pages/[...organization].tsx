@@ -57,13 +57,19 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
         sameSite: 'lax',
       });
 
-      setCookie(ctx, 'teamId', team?.id, {
-        maxAge,
-        httpOnly: true,
-        secure,
-        path: '/',
-        sameSite: 'lax',
-      });
+      // only write the cookie when there is a team to name. `setCookie`
+      // stringifies whatever it is given, so an absent team used to be stored
+      // as the literal text "undefined", and every later request had to
+      // recognise that as "no team" instead of as a document id.
+      if (team?.id) {
+        setCookie(ctx, 'teamId', team.id, {
+          maxAge,
+          httpOnly: true,
+          secure,
+          path: '/',
+          sameSite: 'lax',
+        });
+      }
 
       return {
         redirect: {

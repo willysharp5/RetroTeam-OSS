@@ -19,61 +19,81 @@ export async function getCurrentTeam(
 }
 
 /**
+ * @name isUsableId
+ * @description Whether a value read out of a cookie can be used as a Firestore
+ * document id.
+ *
+ * Cookies only hold strings, so `undefined` and `null` arrive as their literal
+ * text, and clearing one can leave an empty string behind. Passing any of those
+ * to `doc()` throws rather than returning nothing, and the callers of
+ * `getCurrentTeam` treat a thrown error as a failed session — so a single junk
+ * cookie value signed the user out on every page load.
+ */
+function isUsableId(value: Maybe<string>) {
+  if (!value) {
+    return false;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed !== '' && trimmed !== 'undefined' && trimmed !== 'null';
+}
+
+/**
  * @name getTeamByIdOrFirst
- * @description Given a user ID {@link userId}, this function will return
- * either:
+ * @description Resolve the team for {@link userId}, preferring the one named by
+ * the `teamId` cookie.
  *
- * 1. The organizationId passed as first parameter, if passed
- * 2. Or, in case of errors, the first organization found the user belongs to as
- * fallback
+ * In order:
  *
- * @param organizationId
- * @param userId
+ * 1. The cookie's team, if the id is usable, the team still exists, and the user
+ *    is a member of the organization.
+ * 2. The first team in that organization the user is an active member of. The
+ *    caller re-saves the cookie afterwards, so a stale, empty or dangling one
+ *    heals itself on the next request rather than persisting.
+ * 3. The first team found anywhere for the user, when no organization was given
+ *    or they turn out not to belong to it.
+ *
+ * Every step swallows its own failures, because there is no team a broken
+ * request could resolve to and the alternative — letting it throw — is what
+ * logged people out.
  */
 async function getTeamByIdOrFirst(
   organizationId: Maybe<string>,
   userId: string,
   teamId: Maybe<string>,
 ) {
-  const organizationID = organizationId as string;
-  // if the organization ID was passed from the cookie, we try read that
-  if (organizationId && teamId !== 'undefined' && teamId != undefined) {
-    const organization = await getOrganizationData(organizationId);
-    const teamID = teamId as string;
-    const team = await getTeamData(organizationId, teamID);
-
-    // check the user ID belongs to the organization members
-    const userBelongsToOrganization = userId in (organization?.members ?? {});
-
-    // if the user doesn't have permissions to access
-    // the organization, we simply return the first one
-    if (userBelongsToOrganization) {
-      if (team) {
-        return team;
-      }
-
-      // The cookie outlives the team it points at: delete a team, or restore a
-      // project from a backup, and every page load afterwards resolved to no
-      // team at all — which the UI does not expect. The retrospective creation
-      // path builds a document path out of the team id, so an unresolved team
-      // surfaced as a TypeError deep inside the Firestore SDK rather than as
-      // anything actionable. Fall back to the first team instead; the caller
-      // re-saves the cookie, so a stale one heals itself on the next request.
-      return getFirstTeamOfOrganization(organizationID, userId);
-    }
-  } else if (
-    (organizationId && teamId === 'undefined') ||
-    (organizationId && teamId === undefined)
-  ) {
-    const team = await getFirstTeamOfOrganization(organizationID, userId);
-
-    return team;
+  if (!isUsableId(organizationId)) {
+    return getFirstTeam(userId);
   }
 
-  // if the organization ID was not passed
-  // or if somehow the user lacked the permissions
-  // we simply return the first organization they belong to
-  return getFirstTeam(userId);
+  const organizationID = organizationId as string;
+
+  const organization = await getOrganizationData(organizationID).catch(
+    () => undefined,
+  );
+
+  // check the user ID belongs to the organization members
+  const userBelongsToOrganization = userId in (organization?.members ?? {});
+
+  // if the user doesn't have permissions to access
+  // the organization, we simply return the first one
+  if (!userBelongsToOrganization) {
+    return getFirstTeam(userId);
+  }
+
+  if (isUsableId(teamId)) {
+    const team = await getTeamData(organizationID, (teamId as string).trim())
+      // the cookie can outlive the team it names: delete a team, or restore the
+      // project from a backup, and the id points at nothing
+      .catch(() => undefined);
+
+    if (team) {
+      return team;
+    }
+  }
+
+  return getFirstTeamOfOrganization(organizationID, userId);
 }
 
 /**
