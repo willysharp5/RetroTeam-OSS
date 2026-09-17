@@ -32,8 +32,10 @@ rules_version = '2';
 //
 // Reference data that the marketing pages and the signed-out demo board read
 // (`users`, `tags`, `icebreakers`, `bulletPlans`, `demo`) is public, and only
-// `demo` is writable. Everything else — `rules`, `emails` — is touched
-// exclusively by the Admin SDK and stays denied to clients.
+// `demo` is writable. Application settings in `rules` are readable per section
+// but never wholesale, because that collection also holds the AI key — see the
+// block below. `emails` is touched exclusively by the Admin SDK and stays
+// denied to clients.
 service cloud.firestore {
   match /databases/{database}/documents {
     function userId() {
@@ -174,6 +176,38 @@ service cloud.firestore {
 
     match /bulletPlans/{document=**} {
       allow read: if true;
+    }
+
+    // Application settings, one document per section (`organizations`,
+    // `boards`, `retrospectives`, `users`). `useFetchRules` reads these from
+    // the browser on nearly every page, including the signed-out demo board,
+    // and merges them over the permissive defaults in
+    // `src/lib/rules/defaults.ts`. A denial here does not quietly fall back to
+    // those defaults: reactfire throws it into the page, and the whole route
+    // dies with "No matching allow statements".
+    //
+    // The catch is that this collection also holds `rules/ai-config`, which
+    // stores the self-hoster's own AI provider key in plain text — this is a
+    // bring-your-own-key build, so that key is the one real secret in the
+    // database. A blanket read here would hand it to every visitor.
+    //
+    // So a document is readable only if it carries a `section` field, which
+    // `ai-config` does not. That also refuses an unfiltered read of the whole
+    // collection, because `ai-config` would be in the result set: a query has
+    // to be narrowed to a section to be allowed at all, which is exactly what
+    // `useFetchRules` does.
+    //
+    // Excluding `ai-config` by document id instead does not work, and is worth
+    // knowing before reaching for it: a `list` targets the collection, so the
+    // `{ruleId}` wildcard is unbound and any comparison against it is
+    // indeterminate — `allow read: if ruleId != 'ai-config'` denies every
+    // query, including the ones this app depends on. The field check is
+    // therefore the whole guard, so keep the invariant it rests on: anything
+    // secret belongs in a document WITHOUT a `section` field.
+    //
+    // Writes are Admin SDK only — the admin UI and the cron jobs.
+    match /rules/{ruleId} {
+      allow read: if 'section' in resource.data;
     }
 
     // The demo board is a single shared sandbox that anybody can play with
