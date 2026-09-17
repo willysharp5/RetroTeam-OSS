@@ -372,6 +372,11 @@ Everything works out of the box; write a document only to tighten something.
 These are governance settings for your own team, not entitlements. Nothing here
 is a paywall.
 
+The help links behind the question-mark icon in the header work the same way:
+they come from `src/lib/server/docs/default-docs.ts` and point at this
+repository. To replace them, create a top-level `docs` collection and give each
+document a `title`, a `link` and a numeric `order`.
+
 ---
 
 ## Deploying

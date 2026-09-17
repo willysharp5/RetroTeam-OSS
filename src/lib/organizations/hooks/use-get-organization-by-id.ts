@@ -6,6 +6,8 @@ import { useFirestore } from 'reactfire';
 import { ORGANIZATIONS_COLLECTION } from '~/lib/firestore-collections';
 import { Organization } from '../types/organization';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useGetOrganizationById(organizationId: string) {
   const firestore = useFirestore();
 
@@ -33,6 +35,7 @@ export function useGetOrganizationById(organizationId: string) {
             setOrganization(organizationData);
           }
         },
+        onListenerError('use-get-organization-by-id', { setError, setLoading }),
       );
 
       // Clean up listeners when no longer needed

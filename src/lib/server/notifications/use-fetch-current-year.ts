@@ -23,6 +23,8 @@ import { MembershipInvite } from '~/lib/organizations/types/membership-invite';
 import { useCallback, useEffect, useState } from 'react';
 import { InvitesListProps } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useFetchCurrentYearNotifications(
     organizationId: string,
     pageSize: number,
@@ -99,7 +101,12 @@ export function useFetchCurrentYearNotifications(
                         setTotal(totalNotifications.size);
                         setTotalPages(totalPages);
                     });
-                });
+                },
+                  onListenerError('use-fetch-current-year', {
+                    setError,
+                    setLoading,
+                  }),
+                );
 
                 setCurrentPage(page);
 

@@ -15,6 +15,8 @@ import {
 import { TeamMembers } from '~/lib/teams/types/teams';
 import { ORGANIZATIONS_COLLECTION, TEAMS_COLLECTION } from '~/lib/firestore-collections';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 function useFetchTeamsById(
   organizationId: string,
   teamId: any,
@@ -191,11 +193,15 @@ function useFetchTeamsById(
 
 
             }
-          });
+          },
+            onListenerError('get-teams-id', { setError, setLoading }),
+          );
 
           setCurrentPage(page);
           return () => membersUnsubscribe();
-        });
+        },
+          onListenerError('get-teams-id', { setError, setLoading }),
+        );
 
         return () => {
           teamUnsubscribe();

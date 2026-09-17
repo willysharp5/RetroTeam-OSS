@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { USERS_COLLECTION } from '~/lib/firestore-collections';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 function useFetchActions(
   organization: string,
   assigneeFilter: string,
@@ -81,7 +83,9 @@ function useFetchActions(
         setError(error);
         setLoading(false);
       }
-    });
+    },
+      onListenerError('get-actions', { setError, setLoading }),
+    );
 
     // Return unsubscribe function so you can call it when needed
     return unsubscribe;

@@ -21,6 +21,8 @@ import { MembershipInvite } from '~/lib/organizations/types/membership-invite';
 import { useCallback, useEffect, useState } from 'react';
 import { InvitesListProps } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useFetchLastWeekNotifications(
   organizationId: string,
   pageSize: number,
@@ -97,7 +99,9 @@ export function useFetchLastWeekNotifications(
             setTotal(totalNotifications.size);
             setTotalPages(totalPages);
           });
-        });
+        },
+          onListenerError('use-fetch-last-week-', { setError, setLoading }),
+        );
 
         setCurrentPage(page);
 

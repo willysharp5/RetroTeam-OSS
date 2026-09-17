@@ -14,6 +14,8 @@ import { useFirestore } from 'reactfire';
 import { ORGANIZATIONS_COLLECTION, USERS_COLLECTION } from '~/lib/firestore-collections';
 import { MembershipRole } from '~/lib/organizations/types/membership-role';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export default function useFetchOrganizationMembers(
   organizationId: string,
   pageSize: number,
@@ -104,11 +106,15 @@ export default function useFetchOrganizationMembers(
               limit(pageSize)
             );
   
-            unsubscribe = onSnapshot(q, handleSnapshot);
+            unsubscribe = onSnapshot(q, handleSnapshot,
+              onListenerError('get-members', { setError, setLoading }),
+            );
           });
         } else {
           q = query(q, limit(pageSize));
-          unsubscribe = onSnapshot(q, handleSnapshot);
+          unsubscribe = onSnapshot(q, handleSnapshot,
+            onListenerError('get-members', { setError, setLoading }),
+          );
         }
   
       } catch (error: any) {

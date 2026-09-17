@@ -178,6 +178,15 @@ service cloud.firestore {
       allow read: if true;
     }
 
+    // The help links in the app header. Optional — `useFetchDocs` ships a
+    // built-in list and only replaces it if this collection has documents — but
+    // it needs a rule all the same: with none, the read failed with
+    // `permission-denied` on every signed-in screen instead of coming back
+    // empty, and the header renders on all of them.
+    match /docs/{document} {
+      allow read: if true;
+    }
+
     // Application settings, one document per section (`organizations`,
     // `boards`, `retrospectives`, `users`). `useFetchRules` reads these from
     // the browser on nearly every page, including the signed-out demo board,

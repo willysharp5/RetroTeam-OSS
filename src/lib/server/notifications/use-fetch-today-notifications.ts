@@ -20,6 +20,8 @@ import { InvitesListProps } from '~/lib/teams/types/teams';
 import { endOfDay, startOfDay } from 'date-fns';
 import { Notification } from '~/lib/notifications/types/types';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 /**
  * @description Hook to fetch today notifications
  * @param organizationId
@@ -107,7 +109,12 @@ export function useFetchTodayNotification(
             setTotal(totalMembers.size);
             setTotalPages(totalPages);
           });
-        });
+        },
+          onListenerError('use-fetch-today-notifications', {
+            setError,
+            setLoading,
+          }),
+        );
 
         setCurrentPage(page);
 

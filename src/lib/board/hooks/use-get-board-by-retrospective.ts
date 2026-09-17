@@ -19,6 +19,8 @@ import { Retrospectives } from '~/lib/retrospectives/types/retrospectives';
 
 import { RequestsBoard } from '../types/membership-role';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useGetBoardByRetrospectiveId(
   organizationId: string,
   retrospectiveId: string,
@@ -43,6 +45,12 @@ export function useGetBoardByRetrospectiveId(
       setLoading(true);
       const boardRef = doc(boardCollection, retrospectiveId);
 
+      // Held outside the board listener so it can be disposed: returning a
+      // teardown from a snapshot callback does nothing, the SDK ignores it. Every
+      // board update used to open another retrospective listener on top of the
+      // last one, and none of them were ever closed.
+      let unsubscribeRetrospective: (() => void) | undefined;
+
       // Set up a real-time listener for the board Collection
       const unsubscribeBoard = onSnapshot(boardRef, async (querySnapshot) => {
         const boardData = querySnapshot.data();
@@ -50,8 +58,10 @@ export function useGetBoardByRetrospectiveId(
         if (boardData) {
           const retrospectiveRef = boardData.retrospectiveRef;
 
+          unsubscribeRetrospective?.();
+
           // Listen for changes in retrospectiveRef
-          const unsubscribeRetrospective = onSnapshot(
+          unsubscribeRetrospective = onSnapshot(
             retrospectiveRef,
             async (retrospectiveSnapshot: DocumentSnapshot) => {
               const retrospectiveData = retrospectiveSnapshot.data();
@@ -67,17 +77,22 @@ export function useGetBoardByRetrospectiveId(
                 setRetrospective(retrospectiveData);
               }
             },
+            onListenerError('use-get-board-by-retrospective', {
+              setError,
+              setLoading,
+            }),
           );
-
-          // Clean up listeners when no longer needed
-          return () => {
-            unsubscribeRetrospective();
-          };
         }
-      });
+      },
+        onListenerError('use-get-board-by-retrospective', {
+          setError,
+          setLoading,
+        }),
+      );
 
       // Clean up listeners when no longer needed
       return () => {
+        unsubscribeRetrospective?.();
         unsubscribeBoard();
       };
     } catch (error: any) {
@@ -116,6 +131,10 @@ export function useGetBoardByRetrospectiveId(
           // Update the state with the new data
           setRequests(requests);
         },
+        onListenerError('use-get-board-by-retrospective', {
+          setError,
+          setLoading,
+        }),
       );
 
       // Return the unsubscribe function to clean up the listener when needed
@@ -156,6 +175,10 @@ export function useGetBoardByRetrospectiveId(
           // Update the state with the new data
           setPendingRequests(requests);
         },
+        onListenerError('use-get-board-by-retrospective', {
+          setError,
+          setLoading,
+        }),
       );
 
       // Return the unsubscribe function to clean up the listener when needed
@@ -204,11 +227,42 @@ export function useGetBoardByRetrospectiveId(
 
   useEffect(() => {
     // Fetch board when the component mounts or when organizationId / retrospectiveId changes
-    if (organizationId && retrospectiveId) {
-      fetchBoard();
-      fetchRequests();
-      fetchMembers();
+    if (!organizationId || !retrospectiveId) {
+      return;
     }
+
+    // Each fetch returns its own teardown, and `fetchBoard` is async so its
+    // teardown only exists once the promise settles. Nothing collected them
+    // before, so the listeners survived unmount and another set was added every
+    // time the organization or the retrospective changed.
+    let cancelled = false;
+    const teardowns: Array<() => void> = [];
+
+    const start = async (fetch: () => unknown) => {
+      const teardown = await fetch();
+
+      if (typeof teardown !== 'function') {
+        return;
+      }
+
+      if (cancelled) {
+        teardown();
+      } else {
+        teardowns.push(teardown as () => void);
+      }
+    };
+
+    void start(fetchBoard);
+    void start(fetchRequests);
+    void start(fetchMembers);
+
+    return () => {
+      cancelled = true;
+
+      for (const teardown of teardowns) {
+        teardown();
+      }
+    };
   }, [organizationId, retrospectiveId]);
 
   const getRefData = async (ref: any) => {
@@ -225,14 +279,20 @@ export function useGetBoardByRetrospectiveId(
 
       const boardRef = doc(boardCollection, retrospectiveId);
 
+      // See `fetchBoard`: the teardown returned from a snapshot callback is
+      // discarded, so the inner listener has to be held out here to be closed.
+      let unsubscribeRetrospective: (() => void) | undefined;
+
       const unsubscribe = onSnapshot(boardRef, (boardSnapshot) => {
         if (boardSnapshot.exists()) {
           const boardData = boardSnapshot.data();
 
           const retrospectiveRef = boardData.retrospectiveRef;
 
+          unsubscribeRetrospective?.();
+
           // Usar onSnapshot para obtener actualizaciones en tiempo real de la retrospectiva
-          const unsubscribeRetrospective = onSnapshot(
+          unsubscribeRetrospective = onSnapshot(
             retrospectiveRef,
             async (retrospectiveSnapshot: any) => {
               if (retrospectiveSnapshot.exists()) {
@@ -293,10 +353,12 @@ export function useGetBoardByRetrospectiveId(
                 setError(error);
               }
             },
+            onListenerError('use-get-board-by-retrospective', {
+              setError,
+              setLoading,
+            }),
           );
 
-          // Limpieza de la suscripción de retrospectiva cuando el componente se desmonta
-          return () => unsubscribeRetrospective();
         } else {
           const error = {
             name: 'Board not found',
@@ -305,10 +367,18 @@ export function useGetBoardByRetrospectiveId(
           };
           setError(error);
         }
-      });
+      },
+        onListenerError('use-get-board-by-retrospective', {
+          setError,
+          setLoading,
+        }),
+      );
 
       // Limpieza de la suscripción de la tabla cuando el componente se desmonta
-      return () => unsubscribe();
+      return () => {
+        unsubscribeRetrospective?.();
+        unsubscribe();
+      };
     } catch (error) {
       console.error('Error fetching members:', error);
       setError(error);

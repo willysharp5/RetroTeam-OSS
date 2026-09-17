@@ -28,6 +28,8 @@ import { MembershipInvite } from '~/lib/organizations/types/membership-invite';
 import { useCallback, useEffect, useState } from 'react';
 import { InvitesListProps } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useFetchLastMonthNotifications(
   organizationId: string,
   pageSize: number,
@@ -106,7 +108,9 @@ export function useFetchLastMonthNotifications(
             setTotal(totalNotifications.size);
             setTotalPages(totalPages);
           });
-        });
+        },
+          onListenerError('use-fetch-last-month', { setError, setLoading }),
+        );
 
         setCurrentPage(page);
 

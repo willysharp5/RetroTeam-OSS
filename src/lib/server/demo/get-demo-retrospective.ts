@@ -9,6 +9,8 @@ import { useFirestore } from 'reactfire';
 
 import { Retrospectives } from '~/lib/retrospectives/types/retrospectives';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 
 export function useGetDemoRetrospective(
 
@@ -35,7 +37,9 @@ export function useGetDemoRetrospective(
         const boardData = querySnapshot.data();
         setRetrospective(boardData);
 
-      });
+      },
+        onListenerError('get-demo-retrospective', { setError, setLoading }),
+      );
 
       // Clean up listeners when no longer needed
       return () => {

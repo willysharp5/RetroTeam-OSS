@@ -13,6 +13,8 @@ import {
 import { USERS_COLLECTION } from '~/lib/firestore-collections';
 import { Comment } from '~/lib/board/types/types';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 function useFetchComments(
   organization: string,
   teamId: string,
@@ -28,7 +30,7 @@ function useFetchComments(
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any | null>(null);
   const [allComments, setAllComments] = useState<Comment[] | null>([]);
 
   const getCommentById = async (id: string) => {
@@ -68,7 +70,9 @@ function useFetchComments(
       setAllComments(allData as Comment[]);
       
     fetchFilteredComments();
-    });
+    },
+      onListenerError('get-comments', { setError, setLoading }),
+    );
 
     const getFilteredQuery = () => {
       if (!isCurrentQuery) return null;

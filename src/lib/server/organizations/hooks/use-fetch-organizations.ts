@@ -15,6 +15,8 @@ import {
   TEAMS_COLLECTION,
 } from '~/lib/firestore-collections';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useFetchOrganizations(
   pageSize: number,
   text: string,
@@ -106,7 +108,9 @@ export function useFetchOrganizations(
           );
           setTotalPages(totalPages);
           setTotalUsers(totalOrganizationsSnapshot.size);
-        });
+        },
+          onListenerError('use-fetch-organizations', { setError, setLoading }),
+        );
 
         setCurrentPage(page);
 

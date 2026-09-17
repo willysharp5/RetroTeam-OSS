@@ -16,6 +16,8 @@ import {
   ORGANIZATIONS_COLLECTION,
 } from '~/lib/firestore-collections';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 /**
  * @description Hook to fetch the organization's invited members where team.id = 1
  * @param organizationId
@@ -69,7 +71,9 @@ export function useFetchInvitedMembers(
         setTotal(invitesQuerySnapshot.size);
         setError(null);
         setLoading(false);
-      });
+      },
+        onListenerError('use-fetch-invited-members', { setError, setLoading }),
+      );
 
       return () => unsubscribe; // Return the unsubscribe function
     } catch (error: any) {

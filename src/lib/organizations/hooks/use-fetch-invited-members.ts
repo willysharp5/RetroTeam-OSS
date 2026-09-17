@@ -23,6 +23,8 @@ import { InvitesListProps } from '~/lib/teams/types/teams';
 import { MembershipRole } from '../types/membership-role';
 import { DocumentData, QuerySnapshot } from 'firebase-admin/firestore';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 /**
  * @description Hook to fetch the organization's invited members
  * @param organizationId
@@ -100,11 +102,21 @@ export function useFetchInvitedMembers(
               q = query(q, limit(pageSize));
             }
 
-            unsubscribe = onSnapshot(q, handleSnapshot);
+            unsubscribe = onSnapshot(q, handleSnapshot,
+              onListenerError('use-fetch-invited-members', {
+                setError,
+                setLoading,
+              }),
+            );
           });
         } else {
           q = query(q, limit(pageSize));
-          unsubscribe = onSnapshot(q, handleSnapshot);
+          unsubscribe = onSnapshot(q, handleSnapshot,
+            onListenerError('use-fetch-invited-members', {
+              setError,
+              setLoading,
+            }),
+          );
         }
 
         // TOTAL ORGANIZATION INVITES
@@ -151,7 +163,9 @@ export function useFetchInvitedMembers(
         setTotal(querySnapshot.size);
         setAdminsInvites(inviteData);
         setError(null);
-      });
+      },
+        onListenerError('use-fetch-invited-members', { setError, setLoading }),
+      );
 
       return unsubscribe;
     } catch (error: any) {

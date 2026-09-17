@@ -20,6 +20,8 @@ import {
 } from '~/lib/firestore-collections';
 import { Teams } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useFetchOrganizationById(
   organizationId: string,
   teamPageSize: number,
@@ -153,7 +155,12 @@ export function useFetchOrganizationById(
               totalUsersSnapshot.size / membersPageSize,
             );
             setTotalMembersPages(totalPages);
-          });
+          },
+            onListenerError('use-fetch-organization-id', {
+              setError,
+              setLoading,
+            }),
+          );
 
           setCurrentMembersPage(page);
 
@@ -242,7 +249,12 @@ export function useFetchOrganizationById(
             setTotalTeams(totalTeams.size);
             setTotalTeamPages(totalPages);
           });
-        });
+        },
+          onListenerError('use-fetch-organization-id', {
+            setError,
+            setLoading,
+          }),
+        );
 
         setCurrentTeamPage(page);
 

@@ -9,6 +9,8 @@ import {
     onSnapshot,
     orderBy,
   } from 'firebase/firestore';
+
+import { onListenerError } from '~/lib/firestore-listener-error';
   import { useFirestore } from 'reactfire';
   import {
     startOfMonth,
@@ -99,7 +101,9 @@ import {
               setTotal(totalNotifications.size);
               setTotalPages(totalPages);
             });
-          });
+          },
+            onListenerError('use-fetch-rest-years', { setError, setLoading }),
+          );
   
           setCurrentPage(page);
   

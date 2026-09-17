@@ -21,6 +21,8 @@ import {
 import { Organization } from '~/lib/organizations/types/organization';
 import { Teams } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 export function useFetchUserById(
   userId: string,
   organizations: any[],
@@ -178,7 +180,9 @@ export function useFetchUserById(
             setTotalOrganizations(totalMembers.size);
             setTotalOrganizationsPages(totalPages);
           });
-        });
+        },
+          onListenerError('use-fetch-user', { setError, setLoading }),
+        );
 
         setCurrentOrganizationPage(page);
 

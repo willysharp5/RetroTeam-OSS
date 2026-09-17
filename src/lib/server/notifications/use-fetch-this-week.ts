@@ -9,6 +9,8 @@ import {
     onSnapshot,
     orderBy,
   } from 'firebase/firestore';
+
+import { onListenerError } from '~/lib/firestore-listener-error';
   import { useFirestore } from 'reactfire';
   import { startOfWeek, subDays } from 'date-fns';
   import {
@@ -94,7 +96,9 @@ import {
               setTotal(totalNotifications.size);
               setTotalPages(totalPages);
             });
-          });
+          },
+            onListenerError('use-fetch-this-week', { setError, setLoading }),
+          );
   
           setCurrentPage(page);
   

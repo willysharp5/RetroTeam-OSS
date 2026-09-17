@@ -21,6 +21,8 @@ import {
 } from '~/lib/firestore-collections';
 import { InvitesListProps } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 /**
  * @description Hook to fetch the organization's invited members where team.id = 1
  * @param organizationId
@@ -100,7 +102,12 @@ export function useFetchBoardNotificationInvites(
             setTotal(totalMembers.size);
             setTotalPages(totalPages);
           });
-        });
+        },
+          onListenerError('use-fetch-board-notification-invites', {
+            setError,
+            setLoading,
+          }),
+        );
 
         setCurrentPage(page);
 

@@ -21,6 +21,8 @@ import {
 } from '~/lib/firestore-collections';
 import { InvitesListProps } from '~/lib/teams/types/teams';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 /**
  * @description Hook to fetch the organization's invited members where team.id = 1
  * @param organizationId
@@ -91,11 +93,21 @@ export function useFetchInvitedTeamMembers(
               q = query(q, limit(pageSize));
             }
 
-            unsubscribe = onSnapshot(q, handleSnapshot);
+            unsubscribe = onSnapshot(q, handleSnapshot,
+              onListenerError('use-fetch-invited-members', {
+                setError,
+                setLoading,
+              }),
+            );
           });
         } else {
           q = query(q, limit(pageSize));
-          unsubscribe = onSnapshot(q, handleSnapshot);
+          unsubscribe = onSnapshot(q, handleSnapshot,
+            onListenerError('use-fetch-invited-members', {
+              setError,
+              setLoading,
+            }),
+          );
         }
 
         // TOTAL TEAM INVITES

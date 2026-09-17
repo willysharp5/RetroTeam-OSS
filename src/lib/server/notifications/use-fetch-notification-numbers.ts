@@ -14,6 +14,8 @@ import {
 } from '~/lib/firestore-collections';
 import { Notification } from '~/lib/notifications/types/types';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 /**
  * @description Hook to fetch today notifications
  * @param organizationId
@@ -59,7 +61,12 @@ export function useFetchNotificationNumbers(
       const unsubscribe = onSnapshot(q, (snapshot) => {
         setTotal(snapshot.size);
         setError(null);
-      });
+      },
+        onListenerError('use-fetch-notification-numbers', {
+          setError,
+          setLoading,
+        }),
+      );
 
       // Cleanup function to unsubscribe from real-time updates
       return () => unsubscribe();

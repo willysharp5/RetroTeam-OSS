@@ -11,6 +11,8 @@ import {
 
 import { Comment } from '~/lib/board/types/types';
 
+import { onListenerError } from '~/lib/firestore-listener-error';
+
 function useFetchDemoComments(
   allowViewAllComments: boolean,
   author: string,
@@ -22,7 +24,7 @@ function useFetchDemoComments(
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any | null>(null);
   const [allComments, setAllComments] = useState<Comment[] | null>([]);
 
   useEffect(() => {
@@ -47,7 +49,9 @@ function useFetchDemoComments(
       setAllComments(allData as Comment[]);
 
       fetchFilteredComments();
-    });
+    },
+      onListenerError('get-demo-comments', { setError, setLoading }),
+    );
 
     const getFilteredQuery = () => {
       if (!isCurrentQuery) return null;
