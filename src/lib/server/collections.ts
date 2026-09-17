@@ -11,14 +11,12 @@ import {
 } from '~/lib/organizations/types/membership-invite';
 import { Actions } from '../actions/types/actions';
 import { Retrospectives } from '../retrospectives/types/retrospectives';
-import { Templates } from '../templates/types/templates';
 import {
   ORGANIZATIONS_COLLECTION,
   USERS_COLLECTION,
   INVITES_COLLECTION,
   ACTIONS_COLLECTION,
   RETROSPECTIVES_COLLECTION,
-  TEMPLATES_COLLECTION,
   TEAMS_COLLECTION,
   CUSTOM_TEMPLATES_COLLECTION,
   BOARD_COLLECTION,
@@ -100,12 +98,6 @@ export function getRetrospectivesCollection() {
   return getCollectionByName(
     RETROSPECTIVES_COLLECTION,
   ) as CollectionReference<Retrospectives>;
-}
-
-export function getTemplatesCollection() {
-  return getCollectionByName(
-    TEMPLATES_COLLECTION,
-  ) as CollectionReference<Templates>;
 }
 
 export function getCustomTemplatesCollection(

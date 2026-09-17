@@ -28,8 +28,7 @@
     "firebase:deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes,storage",
     "cypress": "NODE_ENV=test cypress open",
     "cypress:headless": "NODE_ENV=test cypress run",
-    "killports": "sh scripts/kill-ports.sh",
-    "firebaseCollections:import": "node scripts/migrate-dev-prod-collections"
+    "killports": "sh scripts/kill-ports.sh"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.46",

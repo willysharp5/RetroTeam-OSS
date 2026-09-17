@@ -23,8 +23,6 @@ export const RULES_COLLECTION = 'rules';
 
 export const TAGS_COLLECTION = `tags`;
 
-export const TEMPLATES_COLLECTION = 'templates';
-
 export const USERS_COLLECTION = `users`;
 
 export const EMAILS_COLLECTION = `emails`;

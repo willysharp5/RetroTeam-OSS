@@ -32,8 +32,8 @@ rules_version = '2';
 //
 // Reference data that the marketing pages and the signed-out demo board read
 // (`users`, `tags`, `icebreakers`, `bulletPlans`, `demo`) is public, and only
-// `demo` is writable. Everything else — `rules`, `emails`, `templates` — is
-// touched exclusively by the Admin SDK and stays denied to clients.
+// `demo` is writable. Everything else — `rules`, `emails` — is touched
+// exclusively by the Admin SDK and stays denied to clients.
 service cloud.firestore {
   match /databases/{database}/documents {
     function userId() {
