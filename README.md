@@ -61,9 +61,9 @@ hosted service on your behalf. It runs end to end with zero paid services.
 - Suggested action items from the board's feedback
 - Pattern and trend analysis across a single retrospective
 - Strengths and improvement areas across many retrospectives over time
-- Works with Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint you
-  run yourself (Ollama, LM Studio, vLLM) — and every prompt is editable in the
-  admin UI
+- Works with Anthropic, OpenAI, Google, OpenRouter, or any OpenAI-compatible
+  endpoint you run yourself (Ollama, LM Studio, vLLM) — and every prompt is
+  editable in the admin UI
 
 Without an AI key, the AI buttons show a short notice asking you to add one.
 Nothing else changes, and no feature is withheld.
@@ -256,8 +256,9 @@ Powers grouping, suggested actions, pattern analysis and analytics insights.
 | Provider | Where to get a key | Notes |
 | --- | --- | --- |
 | Anthropic | https://console.anthropic.com/settings/keys | Default. Default model `claude-sonnet-5`. |
-| OpenAI | https://platform.openai.com/api-keys | |
-| Google | https://aistudio.google.com/apikey | |
+| OpenAI | https://platform.openai.com/api-keys | Default model `gpt-4o`. |
+| Google | https://aistudio.google.com/apikey | Default model `gemini-2.5-flash`. |
+| OpenRouter | https://openrouter.ai/keys | One key for most models. IDs are namespaced `vendor/model`; default `anthropic/claude-sonnet-4.5`. |
 | OpenAI-compatible | — | Point it at a local Ollama / LM Studio / vLLM server. Needs only a base URL; no key at all. |
 
 Two ways to set it:
@@ -266,7 +267,20 @@ Two ways to set it:
   the provider and model, paste your key, and use the "Test" button to check it.
   You can also edit every system prompt and temperature here. Values set in the
   UI are stored in Firestore and take precedence over the environment.
-- **In the environment** — set `AI_API_KEY` in `.env.local`.
+- **In the environment** — set `AI_API_KEY`, and optionally `AI_PROVIDER`,
+  `AI_MODEL` and `AI_BASE_URL`, in `.env.local`. This is the route to use if you
+  have no admin account on the install, since **Admin → AI Settings requires
+  `superAdmin`** — see [Making yourself an admin](#making-yourself-an-admin).
+  Model IDs are provider-specific, so set `AI_MODEL` whenever you set
+  `AI_PROVIDER` to something other than the default.
+
+For example, to use OpenRouter without touching the admin UI:
+
+```dotenv
+AI_API_KEY=sk-or-v1-...
+AI_PROVIDER=openrouter
+AI_MODEL=anthropic/claude-sonnet-4.5
+```
 
 **Without a key:** every AI button shows a notice pointing at Admin → AI
 Settings. Boards, voting, actions, analytics, teams and invitations all work as

@@ -10,7 +10,78 @@ export type AIProvider =
   | 'openai'
   | 'anthropic'
   | 'google'
+  | 'openrouter'
   | 'openai-compatible';
+
+const AI_PROVIDERS: AIProvider[] = [
+  'openai',
+  'anthropic',
+  'google',
+  'openrouter',
+  'openai-compatible',
+];
+
+/**
+ * @name OPENROUTER_BASE_URL
+ * @description OpenRouter's OpenAI-compatible endpoint. Fixed, so nobody
+ * choosing OpenRouter has to know or type it.
+ */
+export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+/**
+ * @name DEFAULT_MODELS
+ * @description The model used when a provider is chosen but no model is named.
+ * Each provider has its own naming scheme — an Anthropic model id is not a
+ * valid OpenRouter one — so a single global default would break every provider
+ * but the one it was written for.
+ */
+const DEFAULT_MODELS: Record<AIProvider, string> = {
+  anthropic: 'claude-sonnet-5',
+  openai: 'gpt-4o',
+  google: 'gemini-2.5-flash',
+  openrouter: 'anthropic/claude-sonnet-4.5',
+  'openai-compatible': '',
+};
+
+/**
+ * @name resolveProvider
+ * @description Keeps an unrecognised value — a typo in AI_PROVIDER, or a
+ * hand-written Firestore document — from silently falling through to OpenAI and
+ * failing with a confusing authentication error.
+ */
+function resolveProvider(value: unknown, fallback: AIProvider): AIProvider {
+  return AI_PROVIDERS.includes(value as AIProvider)
+    ? (value as AIProvider)
+    : fallback;
+}
+
+const ENV_PROVIDER = resolveProvider(process.env.AI_PROVIDER, 'anthropic');
+
+/**
+ * @name defaultModelFor
+ * @description `AI_MODEL` only describes the provider it was written alongside,
+ * so it is ignored once the admin UI has switched to a different one.
+ */
+function defaultModelFor(provider: AIProvider): string {
+  if (provider === ENV_PROVIDER && process.env.AI_MODEL) {
+    return process.env.AI_MODEL;
+  }
+
+  return DEFAULT_MODELS[provider];
+}
+
+/**
+ * @name defaultBaseUrlFor
+ * @description OpenRouter's endpoint is fixed, so it is filled in rather than
+ * asked for. Every other provider either has no base URL or needs one supplied.
+ */
+function defaultBaseUrlFor(provider: AIProvider): string {
+  if (provider === 'openrouter') {
+    return process.env.AI_BASE_URL || OPENROUTER_BASE_URL;
+  }
+
+  return provider === ENV_PROVIDER ? process.env.AI_BASE_URL || '' : '';
+}
 
 export interface AIConfig {
   provider: AIProvider;
@@ -38,11 +109,13 @@ export const MISSING_AI_KEY_MESSAGE =
   'No AI API key is configured. Add your own API key in Admin → AI Settings (or set AI_API_KEY in your environment) to enable AI features.';
 
 const DEFAULT_CONFIG: AIConfig = {
-  // Defaults only. Every AI feature works with any of the four providers —
-  // pick one and paste your own key in Admin → AI Settings.
-  provider: 'anthropic',
-  model: 'claude-sonnet-5',
+  // Defaults only. Every AI feature works with any of the five providers — pick
+  // one and paste your own key in Admin → AI Settings, or set these four
+  // variables if you have no admin account on this install.
+  provider: ENV_PROVIDER,
+  model: defaultModelFor(ENV_PROVIDER),
   apiKey: process.env.AI_API_KEY || '',
+  baseURL: defaultBaseUrlFor(ENV_PROVIDER),
   prompts: {
     groupAndTags: {
       systemPrompt: `You are an experienced Agile Coach analyzing retrospective feedback.
@@ -118,11 +191,13 @@ export async function getAIConfig(): Promise<AIConfig> {
     }
 
     const data = doc.data() as Partial<AIConfig>;
+    const provider = resolveProvider(data.provider, DEFAULT_CONFIG.provider);
+
     return {
-      provider: data.provider || DEFAULT_CONFIG.provider,
-      model: data.model || DEFAULT_CONFIG.model,
+      provider,
+      model: data.model || defaultModelFor(provider),
       apiKey: data.apiKey || process.env.AI_API_KEY || '',
-      baseURL: data.baseURL || '',
+      baseURL: data.baseURL || defaultBaseUrlFor(provider),
       prompts: {
         groupAndTags: {
           ...DEFAULT_CONFIG.prompts.groupAndTags,

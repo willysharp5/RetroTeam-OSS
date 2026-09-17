@@ -28,6 +28,15 @@ const PROVIDERS = [
     needsBaseURL: false,
   },
   {
+    // OpenRouter is OpenAI-compatible, but its endpoint is fixed and it always
+    // needs a key, so it gets its own entry rather than making people look up a
+    // base URL.
+    value: 'openrouter',
+    label: 'OpenRouter',
+    hint: 'e.g. anthropic/claude-sonnet-4.5, openai/gpt-4o, google/gemini-2.5-pro',
+    needsBaseURL: false,
+  },
+  {
     value: 'openai-compatible',
     label: 'OpenAI Compatible (Ollama, Together, Fireworks, vLLM, etc.)',
     hint: 'Enter the exact model ID from your provider',
@@ -341,6 +350,22 @@ function AISettingsPage() {
                   </a>{' '}
                   — any model the SDK supports will work here.
                 </p>
+
+                {config.provider === 'openrouter' && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    OpenRouter model IDs are namespaced as{' '}
+                    <code>vendor/model</code>. Browse them at{' '}
+                    <a
+                      href="https://openrouter.ai/models"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      openrouter.ai/models
+                    </a>
+                    .
+                  </p>
+                )}
               </div>
 
               <div>
@@ -360,7 +385,9 @@ function AISettingsPage() {
                   placeholder={
                     config.hasApiKey
                       ? 'Leave blank to keep current key'
-                      : 'Enter API key for selected provider'
+                      : config.provider === 'openrouter'
+                        ? 'sk-or-v1-... from openrouter.ai/keys'
+                        : 'Enter API key for selected provider'
                   }
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />

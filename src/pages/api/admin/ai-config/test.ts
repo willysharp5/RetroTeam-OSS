@@ -1,45 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { withAdmin as withFirebaseAdmin } from '~/core/middleware/with-admin';
 import { isSuperAdmin } from '~/lib/admin/utils/is-super-admin';
 import { throwUnauthorizedException } from '~/core/http-exceptions';
 import withCsrf from '~/core/middleware/with-csrf';
 import { getAIConfig } from '~/lib/server/ai/ai-config';
-
-async function buildModel(provider: string, model: string, apiKey: string, baseURL?: string) {
-  switch (provider) {
-    case 'anthropic': {
-      const anthropic = createAnthropic({ apiKey });
-      return anthropic(model);
-    }
-    case 'google': {
-      const google = createGoogleGenerativeAI({ apiKey });
-      return google(model);
-    }
-    case 'openai-compatible': {
-      const { createOpenAICompatible } = await import(
-        '@ai-sdk/openai-compatible'
-      );
-      const custom = createOpenAICompatible({
-        name: 'custom',
-        baseURL: baseURL || '',
-        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-      });
-      return custom(model);
-    }
-    case 'openai':
-    default: {
-      const openai = createOpenAI({
-        apiKey,
-        ...(baseURL ? { baseURL } : {}),
-      });
-      return openai(model);
-    }
-  }
-}
+import { buildModel } from '~/lib/server/ai/build-model';
 
 export default async function testAIConfigHandler(
   req: NextApiRequest,
