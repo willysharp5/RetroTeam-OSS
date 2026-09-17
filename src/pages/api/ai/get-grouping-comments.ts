@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import { AIKeyMissingError } from '~/lib/server/ai/call-ai';
+import { AI_KEY_MISSING_CODE } from '~/lib/ai/ai-key-missing';
 
 import { withPipe } from '~/core/middleware/with-pipe';
 import { withAuthedUser } from '~/core/middleware/with-authed-user';
@@ -38,7 +39,11 @@ async function onJoinHandler(req: NextApiRequest, res: NextApiResponse) {
         if (error instanceof AIKeyMissingError) {
             return res
                 .status(503)
-                .send({ success: false, error: error.message });
+                .send({
+                    success: false,
+                    code: AI_KEY_MISSING_CODE,
+                    error: error.message,
+                });
         }
 
         res.status(500).send({ success: false, error: 'Internal Server Error' });

@@ -19,6 +19,7 @@ import { Id, Task } from '~/lib/actions/types/actions';
 import Board from '~/components/board/GroupPage/board/Board';
 
 import PageLoadingIndicator from '~/core/ui/PageLoadingIndicator';
+import If from '~/core/ui/If';
 import { Rules } from '~/lib/rules/types';
 import { TeamMembers } from '~/lib/teams/types/teams';
 import { Retrospectives } from '~/lib/retrospectives/types/retrospectives';
@@ -35,6 +36,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { useUpdateOrganizationAICounter } from '~/lib/organizations/hooks/use-update-ai-counter';
 import { useUpdateRetrospectiveSettings } from '~/lib/retrospectives/hooks/use-update-retrospective-settings';
 import useGetGroupingComments from '~/lib/ai/use-get-grouping-comments';
+import { aiKeyMissingMessage } from '~/lib/ai/ai-key-missing';
+import AiNotConfiguredNotice from '~/components/shared/AiNotConfiguredNotice';
+import { MembershipRole } from '~/lib/organizations/types/membership-role';
 
 interface GroupPageProps {
   tags: Tag[];
@@ -193,11 +197,18 @@ const GroupPage = forwardRef(function GroupPage(
 
   const { trigger: GenerateAIGroupAndTags } = useGetGroupingComments();
 
+  // Set when the request failed only because this install has no provider key.
+  // The callers below run generic "no grouping data" toasts when they get
+  // nothing back, which would bury the one message that actually says what to do.
+  const aiKeyMissingRef = useRef(false);
+
   const groupCommentsAI = useCallback(async () => {
     if (aiCanceledRef.current) {
       setAiCanceled(false);
       return;
     }
+
+    aiKeyMissingRef.current = false;
 
     try {
       const r: any = await GenerateAIGroupAndTags({
@@ -211,7 +222,10 @@ const GroupPage = forwardRef(function GroupPage(
         return;
       }
 
-      if (r.error) {
+      // The word-limit error is reported inside the payload, not next to it:
+      // `r` is the envelope `{ success, data }`, so `r.error` was never set and
+      // the modal below never opened.
+      if (response?.error) {
         onUpdateRetrospectiveLoadingAI(false);
         setShowAiWordError(true);
         return;
@@ -221,7 +235,23 @@ const GroupPage = forwardRef(function GroupPage(
 
       return await onCreateAiGrouping(response);
     } catch (error) {
+      onUpdateRetrospectiveLoadingAI(false);
+
+      // Nobody has supplied an API key yet. That is a setup step whoever runs
+      // this install can finish themselves, so say so on the board instead of
+      // only logging it — the grouping starts on its own, so there is no failed
+      // click to explain the silence.
+      const keyMissing = aiKeyMissingMessage(error);
+
+      if (keyMissing) {
+        aiKeyMissingRef.current = true;
+        setAiCanceled(true);
+        toaster.error(keyMissing, { duration: 10000 });
+        return;
+      }
+
       console.error('Error in groupCommentsAI:', error);
+      toaster.error('The AI could not group these comments. Please try again');
     }
   }, [
     retrospective,
@@ -274,6 +304,13 @@ const GroupPage = forwardRef(function GroupPage(
 
   const groupComments = useCallback(
     _.debounce(async (aiGrouping) => {
+      // No payload at all means the request itself failed, and whoever failed it
+      // has already said why. Falling through would replace that with "No groups
+      // found. Please try again", which is wrong when the reason is a missing key.
+      if (!aiGrouping) {
+        return;
+      }
+
       const AIGroups = formatComments(aiGrouping);
 
       if (AIGroups.length === 0) {
@@ -352,7 +389,10 @@ const GroupPage = forwardRef(function GroupPage(
     const response = await groupCommentsAI();
 
     if (!response || !response.groupingData) {
-      toaster.error('No grouping data found.');
+      if (!aiKeyMissingRef.current) {
+        toaster.error('No grouping data found.');
+      }
+
       onUpdateRetrospectiveLoadingAI(false);
       return;
     }
@@ -390,47 +430,57 @@ const GroupPage = forwardRef(function GroupPage(
   }
 
   return (
-    <Board
-      teamMembers={teamMembers}
-      organizationId={organizationId}
-      retrospectiveId={retrospectiveId}
-      teamId={teamId}
-      updateTask={updateTask}
-      deleteTask={deleteTask}
-      detatchTask={detatchTask}
-      detatchAllTask={detatchAllTask}
-      createGroup={createGroup}
-      hideGroupTasks={hideGroupTasks}
-      setTasks={setTasks}
-      setIsProcessing={setIsProcessing}
-      setGroups={setGroups}
-      tasks={tasks}
-      structure={retrospectiveData.structure}
-      retrospective={retrospective}
-      groups={groups}
-      tags={tags}
-      currentUser={currentUser}
-      onUpdateGroup={onUpdateGroup}
-      updateGroups={updateGroups}
-      rules={rules}
-      currentUserRole={currentUserRole}
-      numberVotes={numberVotes}
-      setShowAiWordError={setShowAiWordError}
-      showAiWordError={showAiWordError}
-      aiRules={aiRules}
-      setLoadingAI={onUpdateRetrospectiveLoadingAI}
-      aiCanceled={aiCanceled}
-      setAiCanceled={setAiCanceled}
-      timeoutRef={timeoutRef}
-      groupCommentsAI={groupCommentsAI}
-      groupComments={groupComments}
-      loadingAI={loadingAI}
-      setShowRegenerateWarning={setShowRegenerateWarning}
-      onRegenerateGroupingAI={onRegenerateGroupingAI}
-      showRegenerateWarning={showRegenerateWarning}
-      createTask={createTask}
-      aiRemaining={aiRemaining}
-    ></Board>
+    <div className={'flex w-full flex-col space-y-4'}>
+      {/*
+        Only the admin can start the AI grouping, so only the admin is shown the
+        setup hint — for everyone else there is nothing to act on.
+      */}
+      <If condition={currentUserRole === MembershipRole.Admin}>
+        <AiNotConfiguredNotice />
+      </If>
+
+      <Board
+        teamMembers={teamMembers}
+        organizationId={organizationId}
+        retrospectiveId={retrospectiveId}
+        teamId={teamId}
+        updateTask={updateTask}
+        deleteTask={deleteTask}
+        detatchTask={detatchTask}
+        detatchAllTask={detatchAllTask}
+        createGroup={createGroup}
+        hideGroupTasks={hideGroupTasks}
+        setTasks={setTasks}
+        setIsProcessing={setIsProcessing}
+        setGroups={setGroups}
+        tasks={tasks}
+        structure={retrospectiveData.structure}
+        retrospective={retrospective}
+        groups={groups}
+        tags={tags}
+        currentUser={currentUser}
+        onUpdateGroup={onUpdateGroup}
+        updateGroups={updateGroups}
+        rules={rules}
+        currentUserRole={currentUserRole}
+        numberVotes={numberVotes}
+        setShowAiWordError={setShowAiWordError}
+        showAiWordError={showAiWordError}
+        aiRules={aiRules}
+        setLoadingAI={onUpdateRetrospectiveLoadingAI}
+        aiCanceled={aiCanceled}
+        setAiCanceled={setAiCanceled}
+        timeoutRef={timeoutRef}
+        groupCommentsAI={groupCommentsAI}
+        groupComments={groupComments}
+        loadingAI={loadingAI}
+        setShowRegenerateWarning={setShowRegenerateWarning}
+        onRegenerateGroupingAI={onRegenerateGroupingAI}
+        showRegenerateWarning={showRegenerateWarning}
+        createTask={createTask}
+        aiRemaining={aiRemaining}
+      ></Board>
+    </div>
   );
 });
 

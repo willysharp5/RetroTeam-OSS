@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import toaster from 'react-hot-toast';
 
 import {
   ActionContentProps,
@@ -30,6 +31,8 @@ import isMobile from '~/components/utils/deviceDetecter';
 import If from '~/core/ui/If';
 import { useUpdateRetrospectiveSettings } from '~/lib/retrospectives/hooks/use-update-retrospective-settings';
 import useGetAiActions from '~/lib/ai/use-get-actions';
+import { aiKeyMissingMessage } from '~/lib/ai/ai-key-missing';
+import AiNotConfiguredNotice from '~/components/shared/AiNotConfiguredNotice';
 
 export default function ActionPage({
   tags,
@@ -175,7 +178,7 @@ export default function ActionPage({
         const response = r.data;
 
         if (aiCanceled.current) return; // Check again after the request
-        if (isValidResponse(response) && !r.error) {
+        if (isValidResponse(response) && !response?.error) {
           const responseData =
             response[0].actionItems ||
             response[0].ActionItems ||
@@ -195,14 +198,30 @@ export default function ActionPage({
           console.error(r);
           setLoadingAI(false);
           setHasDisplayedAI(true);
-          if (r.error) {
+
+          // The word-limit error rides inside the payload, not on the envelope
+          // `{ success, data }`, so `r.error` was never set and this modal never
+          // opened.
+          if (response?.error) {
             setShowAiWordError(true);
           }
+
           throw new Error('Response contains invalid key "Ownership"');
         }
       } catch (error) {
+        setLoadingAI(false);
+
+        // Nobody has supplied an API key yet — a setup step whoever runs this
+        // install can finish themselves. The suggestions are requested
+        // automatically, so without this the screen just stays empty.
+        const keyMissing = aiKeyMissingMessage(error);
+
+        if (keyMissing) {
+          toaster.error(keyMissing, { duration: 10000 });
+          return;
+        }
+
         console.error(error);
-        // Handle error as needed
       } finally {
         // Clear the timeout if the request completes before the timeout
         if (timeoutRef.current) {
@@ -278,56 +297,66 @@ export default function ActionPage({
   }
 
   return (
-    <Content
-      retrospective={retrospective}
-      teamMembers={boardMembers}
-      organizationId={organizationId}
-      remaining={aiRemaining}
-      teamId={teamId}
-      retrospectiveId={retrospectiveId}
-      tasks={tasks}
-      groups={groups}
-      data={tasks}
-      actions={actions}
-      setGroups={setGroups}
-      setActions={setActions}
-      updateTask={updateTask}
-      deleteTask={deleteTask}
-      detatchTask={detatchTask}
-      detatchAllTask={detatchAllTask}
-      createGroup={createGroup}
-      addCommentGroup={addCommentGroup}
-      hideGroupTasks={hideGroupTasks}
-      createAction={createAction}
-      updateAction={updateAction}
-      archiveAction={archiveAction}
-      deleteAction={deleteAction}
-      structure={retrospectiveData.structure}
-      tags={tags}
-      currentUser={currentUser}
-      onUpdateGroup={onUpdateGroup}
-      rules={rules}
-      currentUserRole={currentUserRole}
-      numberVotes={numberVotes}
-      showSettingsModal={showSettingsModal}
-      setShowSettingsModal={setShowSettingsModal}
-      onUpdateBoardSettings={onUpdateBoardSettings}
-      voteNumber={voterNumber}
-      setVoteNumber={setVoteNumber}
-      subscriptionId={subscriptionId}
-      refetchTeamMembers={searchMembers}
-      loadingMembers={loadingSearch}
-      aiData={aiData}
-      getAiActions={onRegenerateAI}
-      restrictions={restrictions}
-      loadingAI={loadingAI}
-      showAiWordError={showAiWordError}
-      setShowAiWordError={setShowAiWordError}
-      onCancelAI={onCancelAI}
-      canUseAI={canUseAI}
-      createTask={createTask}
-      organizationData={organizationData}
-    />
+    <div className={'flex w-full flex-col space-y-4'}>
+      {/*
+        Only the admin triggers the AI suggestions, so only the admin is shown
+        the setup hint — for everyone else there is nothing to act on.
+      */}
+      <If condition={currentUserRole === MembershipRole.Admin}>
+        <AiNotConfiguredNotice />
+      </If>
+
+      <Content
+        retrospective={retrospective}
+        teamMembers={boardMembers}
+        organizationId={organizationId}
+        remaining={aiRemaining}
+        teamId={teamId}
+        retrospectiveId={retrospectiveId}
+        tasks={tasks}
+        groups={groups}
+        data={tasks}
+        actions={actions}
+        setGroups={setGroups}
+        setActions={setActions}
+        updateTask={updateTask}
+        deleteTask={deleteTask}
+        detatchTask={detatchTask}
+        detatchAllTask={detatchAllTask}
+        createGroup={createGroup}
+        addCommentGroup={addCommentGroup}
+        hideGroupTasks={hideGroupTasks}
+        createAction={createAction}
+        updateAction={updateAction}
+        archiveAction={archiveAction}
+        deleteAction={deleteAction}
+        structure={retrospectiveData.structure}
+        tags={tags}
+        currentUser={currentUser}
+        onUpdateGroup={onUpdateGroup}
+        rules={rules}
+        currentUserRole={currentUserRole}
+        numberVotes={numberVotes}
+        showSettingsModal={showSettingsModal}
+        setShowSettingsModal={setShowSettingsModal}
+        onUpdateBoardSettings={onUpdateBoardSettings}
+        voteNumber={voterNumber}
+        setVoteNumber={setVoteNumber}
+        subscriptionId={subscriptionId}
+        refetchTeamMembers={searchMembers}
+        loadingMembers={loadingSearch}
+        aiData={aiData}
+        getAiActions={onRegenerateAI}
+        restrictions={restrictions}
+        loadingAI={loadingAI}
+        showAiWordError={showAiWordError}
+        setShowAiWordError={setShowAiWordError}
+        onCancelAI={onCancelAI}
+        canUseAI={canUseAI}
+        createTask={createTask}
+        organizationData={organizationData}
+      />
+    </div>
   );
 }
 
