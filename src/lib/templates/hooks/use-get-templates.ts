@@ -1,92 +1,55 @@
-import {
-  collection,
-  getDocs,
-  CollectionReference,
-  QuerySnapshot,
-  DocumentData,
-  query,
-  orderBy,
-  startAfter,
-  limit,
-} from 'firebase/firestore';
-import { useFirestore } from 'reactfire';
-import { TEMPLATES_COLLECTION } from '~/lib/firestore-collections';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Templates } from '../types/templates';
-import { useEffect, useState } from 'react';
+import { DEFAULT_TEMPLATES } from '../default-templates';
 
-interface LoadedPages {
-  [key: number]: any[];
-}
-
+/**
+ * @name useGetTemplates
+ * @description Returns the built-in retrospective templates, one page at a
+ * time.
+ *
+ * The templates are defined in code (see `DEFAULT_TEMPLATES`) rather than read
+ * from Firestore. The hosted commercial build kept them in a `templates`
+ * collection that was populated by hand, so a self-hosted install started with
+ * an empty picker and could not create a retrospective. Reading them from code
+ * means they are always present, with nothing to seed and no read cost.
+ *
+ * Pagination is kept because the picker renders a pager, but it is now a slice
+ * of an in-memory array, so `fetchTemplates` is synchronous in effect and can
+ * never fail.
+ */
 export function useGetTemplates(pageSize: number = 4) {
-  const firestore = useFirestore();
-  const templatesCollection: CollectionReference<DocumentData> = collection(
-    firestore,
-    TEMPLATES_COLLECTION,
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const templates = DEFAULT_TEMPLATES;
+
+  const totalTemplates = templates.length;
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(totalTemplates / pageSize)),
+    [totalTemplates, pageSize],
   );
 
-  const [templateData, setTemplateData] = useState<Templates[]>([]);
+  const templateData: Templates[] = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
 
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(0);
+    return templates.slice(start, start + pageSize);
+  }, [templates, currentPage, pageSize]);
 
-  const [loadedPages, setLoadedPages] = useState<LoadedPages>({});
+  const fetchTemplates = useCallback(
+    async (page: number) => {
+      // clamp, so a stale pager click can never land on an empty page
+      const nextPage = Math.min(Math.max(1, page), totalPages);
 
-  const [totalTemplates, setTotalTemplates] = useState<number>(0);
+      setCurrentPage(nextPage);
+    },
+    [totalPages],
+  );
 
-  async function fetchTemplates(page: number) {
-    try {
-      let templatesQuery = query(
-        templatesCollection,
-        orderBy('title'),
-        limit(pageSize),
-      );
-
-      // Calculate the startAt value based on the page number and page size
-      const startAtIndex = (page - 1) * pageSize;
-
-      // If not the first page, use startAfter to paginate
-      if (startAtIndex > 0) {
-        const startAfterDoc =
-          loadedPages[page - 1][loadedPages[page - 1].length - 1];
-        templatesQuery = query(templatesQuery, startAfter(startAfterDoc.title));
-      }
-
-      const querySnapshot: QuerySnapshot<DocumentData> =
-        await getDocs(templatesQuery);
-      const templates: Templates[] = [];
-
-      querySnapshot.forEach((doc) => {
-        const data = { ...doc.data() };
-        templates.push({
-          id: doc.id,
-          title: data.title,
-          summary: data.summary,
-          structure: data.structure,
-        });
-      });
-      setTemplateData(templates);
-
-      // Calculate the total number of pages based on the total number of retrospectives for the organization
-      const totalQuery = query(templatesCollection);
-      const totalCustomTemplates = await getDocs(totalQuery);
-      const totalPages = Math.ceil(totalCustomTemplates.size / pageSize);
-      setTotalPages(totalPages);
-      setTotalTemplates(totalCustomTemplates.size);
-
-      setCurrentPage(page);
-      setLoadedPages((prevState) => {
-        return { ...prevState, [page]: templates };
-      });
-    } catch (error) {
-      console.error('Error al obtener las plantillas:', error);
-      setTemplateData([]);
-    }
-  }
-
+  // when the page size changes the current page may no longer exist
   useEffect(() => {
-    fetchTemplates(1);
-  }, [pageSize]);
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   return {
     templateData,
