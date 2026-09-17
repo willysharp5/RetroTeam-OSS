@@ -92,12 +92,24 @@ export const TemplatesComponent = ({ onCreateRetrospective }: Props) => {
         allowMembersViewComments: false,
       };
 
-      const retrospectiveId = await addRetrospective(
-        retrospective,
-        userId,
-        organizationID,
-        teamId,
-      );
+      let retrospectiveId: string | undefined;
+
+      try {
+        retrospectiveId = await addRetrospective(
+          retrospective,
+          userId,
+          organizationID,
+          teamId,
+        );
+      } catch (e) {
+        toast.error(
+          e instanceof Error
+            ? e.message
+            : 'Could not create the retrospective. Check the browser console for details.',
+        );
+
+        return;
+      }
       setShowAddRetrospective(false);
       if (onCreateRetrospective) onCreateRetrospective();
       // Pending to add the follow up to start a retrospective

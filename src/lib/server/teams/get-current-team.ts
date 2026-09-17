@@ -48,7 +48,18 @@ async function getTeamByIdOrFirst(
     // if the user doesn't have permissions to access
     // the organization, we simply return the first one
     if (userBelongsToOrganization) {
-      return team;
+      if (team) {
+        return team;
+      }
+
+      // The cookie outlives the team it points at: delete a team, or restore a
+      // project from a backup, and every page load afterwards resolved to no
+      // team at all — which the UI does not expect. The retrospective creation
+      // path builds a document path out of the team id, so an unresolved team
+      // surfaced as a TypeError deep inside the Firestore SDK rather than as
+      // anything actionable. Fall back to the first team instead; the caller
+      // re-saves the cookie, so a stale one heals itself on the next request.
+      return getFirstTeamOfOrganization(organizationID, userId);
     }
   } else if (
     (organizationId && teamId === 'undefined') ||

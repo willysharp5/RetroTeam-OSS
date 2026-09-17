@@ -23,6 +23,18 @@ export function useAddRetrospective() {
       organizationID: string,
       teamId: string,
     ) => {
+      // Every document below is addressed by organization and team id. Firestore
+      // reports a missing path segment as `Cannot read properties of undefined
+      // (reading 'indexOf')` from inside `doc()`, which says nothing about what
+      // is actually missing, so check first and say so.
+      if (!organizationID || !teamId || !userId) {
+        throw new Error(
+          `Cannot create a retrospective without an organization, a team and a signed-in user (organization: ${
+            organizationID || 'missing'
+          }, team: ${teamId || 'missing'}, user: ${userId || 'missing'})`,
+        );
+      }
+
       try {
         const teamDocRef = doc(
           firestore,
@@ -139,7 +151,15 @@ export function useAddRetrospective() {
         });
 
         return retrospectiveId; // Return the document ID
-      } catch (e) {}
+      } catch (e) {
+        // Never swallow this. A failed write used to leave the dialog open
+        // with nothing in the console, which is indistinguishable from the
+        // button not being wired up at all — that is exactly how a Firestore
+        // rules denial stayed hidden. Let the caller decide what to show.
+        console.error('Could not create the retrospective', e);
+
+        throw e;
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
