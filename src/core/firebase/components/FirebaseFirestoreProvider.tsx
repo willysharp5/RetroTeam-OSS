@@ -35,58 +35,46 @@ export default function FirebaseFirestoreProvider({
 
   const isEmulatorEnv = configuration.emulator ?? useEmulator;
 
-  /* connect to emulator if enabled
+  // Without this, the client talks to Google's Firestore instead of the local
+  // emulator. Against a demo project that fails as "Permission denied on
+  // resource project <id>", the SDK gives up and goes offline, and because we
+  // use `persistentLocalCache` every later read surfaces as "Failed to get
+  // document because the client is offline" -- which reads like a network
+  // problem rather than a client pointed at the wrong backend.
+  //
+  // This has to happen after `initializeFirestore` and before the first
+  // operation, which the `firestore` guard above already guarantees: we only
+  // get here once per module instance.
   if (isEmulatorEnv) {
-    const host = getFirestoreHost();
-    const port = Number(getFirestorePort());
-
     try {
-      executeSafely(() => {
-        if (!didFirestoreInitialize(firestore)) {
-          connectFirestoreEmulator(firestore, host, port);
-        }
-      });
+      connectFirestoreEmulator(
+        firestore,
+        getFirestoreHost(),
+        getFirestorePort(),
+      );
     } catch (e) {
-      // this may happen on re-renderings
+      // Hot reloading can re-evaluate this module while the SDK instance
+      // survives, and connecting twice throws. Worth a line in the console --
+      // silently swallowing it is how the commented-out original hid the fact
+      // that nothing was connecting at all.
+      console.warn('Could not connect to the Firestore emulator', e);
     }
-  }*/
+  }
 
   return <FirestoreProvider sdk={firestore}>{children}</FirestoreProvider>;
 }
 
-/**
- * @name executeSafely
- * @description wrap callback for exceptions which may happen due to re-renderings and HMR
- * @param callback
- */
-/*function executeSafely(callback: () => Promise<unknown> | void) {
-  try {
-    void callback();
-  } catch (e) {
-    // the exception may be thrown on re-renderings
-  }
-}
-
 function getFirestoreHost() {
-  return process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST ?? 'localhost';
+  return (
+    process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST ??
+    configuration.emulatorHost ??
+    'localhost'
+  );
 }
 
 function getFirestorePort() {
-  return process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_PORT ?? 8080;
-}*/
-
-/**
- * @description ReactFire is affected by a weird bug. We use this to check
- * that Firestore hasn't been initialized
- * @param firestore
- */
-/*function didFirestoreInitialize(firestore: Firestore) {
-  if ('_settingsFrozen' in firestore) {
-    return (firestore as Firestore & { _settingsFrozen: boolean })[
-      '_settingsFrozen'
-    ];
-  }
-}*/
+  return Number(process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_PORT ?? 8080);
+}
 
 /**
  * @description Check that Cypress is attached to the global window object.
