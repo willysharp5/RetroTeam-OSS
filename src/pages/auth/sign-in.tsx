@@ -79,18 +79,9 @@ export const SignInContent: React.FCC = () => {
         </div>
       </div>
       <div className="md:mx-0 mx-4">
-        <div className="flex justify-end text-sm mt-4 mx-8">
-          <p className="text-zinc-500 my-auto">Do not have an account?</p>
-          <Link
-            href={'/auth/sign-up'}
-            className="text-black bg-[#EF4444] hover:bg-red-600 text-white rounded-md shadow-sm py-2 px-4 ml-1.5"
-          >
-            Sign Up
-          </Link>
-        </div>
         <AuthPageLayout heading={<Trans i18nKey={'auth:signInHeading'} />}>
           <Head>
-            <title key={'title'}>{t(`auth:signUp`)}</title>
+            <title key={'title'}>{t(`auth:signIn`)}</title>
           </Head>
 
           <OAuthProviders onSignIn={onSignIn} />

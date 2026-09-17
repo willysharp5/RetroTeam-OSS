@@ -23,11 +23,11 @@ const AnonymousWarning = () => {
       <div className="flex justify-between items-center">
         <p className="text-xl font-medium">You Cannot Access these Features</p>
         <Link
-          href={configuration.paths.signUp}
+          href={configuration.paths.signIn}
           className="bg-orange-500 text-white py-2 px-4 rounded-md flex space-x-2 items-center hover:bg-orange-400"
         >
           <Image src={plus} alt="plus" />
-          <p className="text-sm font-medium">Sign up</p>
+          <p className="text-sm font-medium">Sign in</p>
         </Link>
       </div>
       <div className="text-sm">

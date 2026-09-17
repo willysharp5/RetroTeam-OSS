@@ -19,7 +19,7 @@ const ORGANIZATION_ID_COOKIE_NAME = 'organizationId';
 const TEAM_ID_COOKIE_NAME = 'teamId';
 
 const DEFAULT_OPTIONS = {
-  redirectPath: configuration.paths.signUp,
+  redirectPath: configuration.paths.signIn,
   locale: configuration.site.locale ?? 'en',
   localeNamespaces: <string[]>[],
 };

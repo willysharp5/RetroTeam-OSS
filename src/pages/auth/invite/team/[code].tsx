@@ -127,7 +127,7 @@ const InvitePage = (
     const tokenName = btoa(name);
     const tokenLastName = btoa(lastName);
 
-    const signUpPage = `${configuration.paths.signUp}`;
+    const signUpPage = `${configuration.paths.signIn}`;
 
     Cookies.set('organizationInvite', tokenOrganization);
     Cookies.set('organizationNameInvite', tokenOrganizationName);

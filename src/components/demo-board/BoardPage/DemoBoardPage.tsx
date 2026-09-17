@@ -621,7 +621,7 @@ export default function DemoBoardPage() {
       <If condition={!currentUser}>
         <div className="fixed bottom-8 left-6">
           <Link
-            href={configuration.paths.signUp}
+            href={configuration.paths.signIn}
             className="px-4 py-2 rounded-[5px] h-[70px] w-[240px] w-full mt-6 bg-[#DC2626] hover:bg-red-500 text-white text-sm flex justify-center items-center"
           >
             <div className="w-[27px] h-[27px]">

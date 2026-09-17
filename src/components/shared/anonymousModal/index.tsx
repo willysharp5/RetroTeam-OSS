@@ -40,10 +40,10 @@ export function AnonymousModal({
                   </button>
                 )}
                 <Link
-                  href={'/auth/sign-up'}
+                  href={'/auth/sign-in'}
                   className="px-4 py-2 bg-black text-white rounded hover:bg-zinc-600 focus:outline-none"
                 >
-                  Sign Up
+                  Sign In
                 </Link>
               </div>
             </div>

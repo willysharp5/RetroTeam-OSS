@@ -327,8 +327,8 @@ function LatestBoards({ user, setLoadingRetrospectives }: any) {
                         : `Organization Boards`}{' '}
                     </p>
                     <button className="bg-black hover:bg-zinc-700 text-white py-2 px-4 rounded-md">
-                      <Link href={'/auth/sign-up'}>
-                        Sign up to view this{' '}
+                      <Link href={'/auth/sign-in'}>
+                        Sign in to view this{' '}
                         {filters.archived
                           ? `Archives`
                           : filters.ownBoards

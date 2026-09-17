@@ -62,7 +62,6 @@ const configuration = {
   theme: Themes.Light,
   paths: {
     signIn: '/auth/sign-in',
-    signUp: '/auth/sign-up',
     demo: '/demo',
     emailLinkSignIn: '/auth/link',
     onboarding: `/onboarding`,

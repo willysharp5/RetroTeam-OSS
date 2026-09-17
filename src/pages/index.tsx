@@ -69,7 +69,7 @@ const Index = () => {
                 color={'custom'}
                 size={'large'}
                 round
-                href={'/auth/sign-up'}
+                href={'/auth/sign-in'}
               >
                 <span className={'flex items-center space-x-2'}>
                   <span>Get Started</span>
@@ -233,7 +233,7 @@ const Index = () => {
                 <Button
                   className={'w-full lg:w-auto'}
                   size={'large'}
-                  href={'/auth/sign-up'}
+                  href={'/auth/sign-in'}
                 >
                   Get Started
                 </Button>

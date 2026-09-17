@@ -163,7 +163,7 @@ const ProfileDropdown: React.FCC<{
             role={'button'}
             className={'flex !cursor-pointer items-center space-x-2'}
           >
-            <Link className='p-4' href={configuration.paths.signUp}>
+            <Link className='p-4' href={configuration.paths.signIn}>
               <Image alt="logo" width={170} src={Logo}></Image>
             </Link>
           </DropdownMenuItem>

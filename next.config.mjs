@@ -28,6 +28,13 @@ const config = {
   // Add redirects for malicious routes
   async redirects() {
     return [
+      // Registration was removed: people sign in with Google, anonymously, or
+      // with an existing email/password account. Old links must not 404.
+      {
+        source: '/auth/sign-up',
+        destination: '/auth/sign-in',
+        permanent: false,
+      },
       // Redirect attempts to access sensitive files
       {
         source: '/.env',
