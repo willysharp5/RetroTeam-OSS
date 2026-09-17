@@ -519,74 +519,6 @@
       ]
     },
     {
-      "collectionGroup": "organizations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "subscription",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "organizations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "subscription",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "subscription.createdAt",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "organizations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "subscription.status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "subscription.createdAt",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "retrospectives",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "acces.type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "archived",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "finished",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "organization",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "date",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "retrospectives",
       "queryScope": "COLLECTION",
       "fields": [
@@ -829,56 +761,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "members.S64BcNLCpqeHfpIepA0AxjiNuiX2.active",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "members.S64BcNLCpqeHfpIepA0AxjiNuiX2",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "teams",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "members.S64BcNLCpqeHfpIepA0AxjiNuiX2.active",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "searchableName",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "members.S64BcNLCpqeHfpIepA0AxjiNuiX2",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "teams",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "members.undefined.active",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "members.undefined",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "teams",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "users",
           "arrayConfig": "CONTAINS"
         },
@@ -944,20 +826,6 @@
         },
         {
           "fieldPath": "searchableName",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "subscription",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
           "order": "ASCENDING"
         }
       ]

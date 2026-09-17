@@ -1,4 +1,39 @@
 rules_version = '2';
+
+// Firestore security rules.
+//
+// Firestore is default-deny: any path without a matching `allow` is rejected
+// with PERMISSION_DENIED, and `create`/`update`/`delete` are separate
+// operations. The rules that shipped with the boilerplate only covered
+// `organizations`, `invites`, part of `teams` and a public read on `users` —
+// none of the collections the browser actually writes to (retrospectives,
+// board, comments, groups, timer, actions, custom templates, notifications).
+// The working rule set lived in the hosted project rather than in the repo, so
+// a fresh self-hosted install could not create a retrospective at all.
+//
+// The model here is deliberately simple, because it matches how the app is
+// actually used — a team tool where everyone in an organization is a
+// colleague:
+//
+//   * Everything under /organizations/{organizationId} is readable and
+//     writable by the members of that organization, and by nobody else.
+//   * Membership is the `members` map on the organization document. That map
+//     can only be changed by the Admin SDK (see `canUpdateOrganization`), so a
+//     client cannot add itself to an organization.
+//   * Joining — accepting an invite, or joining a board by code — happens
+//     server side through the Admin SDK, which bypasses these rules and adds
+//     the user to `members` first. So every client write happens as a member.
+//   * Anonymous users are members like any other, which matters because
+//     signing in anonymously is the primary way into this app.
+//
+// Role checks are left to the application. Within an organization the rules do
+// not distinguish member from admin: the helpers below are kept so a
+// self-hoster who needs a stricter split has something to build on.
+//
+// Reference data that the marketing pages and the signed-out demo board read
+// (`users`, `tags`, `icebreakers`, `bulletPlans`, `demo`) is public, and only
+// `demo` is writable. Everything else — `rules`, `emails`, `templates` — is
+// touched exclusively by the Admin SDK and stays denied to clients.
 service cloud.firestore {
   match /databases/{database}/documents {
     function userId() {
@@ -79,17 +114,19 @@ service cloud.firestore {
     function canUpdateOrganization(organizationId) {
       let isMember = userIsMemberByOrganizationId(organizationId);
 
-      // we should not let users update these fields from a non-admin env
-      let noDisallowedFields = fieldsNotInUpdateAction(['members',
-      'subscription', 'customerId']);
+      // `members` is the source of truth for who may read and write anything
+      // in this organization, so only the Admin SDK gets to change it —
+      // otherwise a member could add themselves to somebody else's
+      // organization. Everything else on the document (name, logo, AI
+      // counters) is fair game for a member.
+      let noDisallowedFields = fieldsNotInUpdateAction(['members']);
 
       return isMember && noDisallowedFields;
     }
 
     function canCreateOrganization() {
-      return isSignedIn() && fieldsNotInCreateAction(['members', 'subscription',
-       'customerId'
-      ]);
+      // the creator is added to `members` afterwards, server side
+      return isSignedIn() && fieldsNotInCreateAction(['members']);
     }
 
     match /organizations/{organizationId} {
@@ -97,25 +134,41 @@ service cloud.firestore {
       allow read: if userId() in existingData().members;
       allow update: if canUpdateOrganization(organizationId);
 
-      match /invites/{inviteId} {
-        allow delete: if isAdmin(organizationId);
-        allow list: if userIsMemberByOrganizationId(organizationId);
+      // Retrospectives, boards, comments, groups, votes, actions, timers,
+      // teams, custom templates, invites, notifications — the whole
+      // organization subtree belongs to its members.
+      //
+      // The leading `{subcollection}` segment matters: it is what keeps this
+      // rule off the organization document itself. `**` matches zero or more
+      // segments, so a bare `match /{documents=**}` here would also match the
+      // organization document and union itself with the `update` rule above —
+      // which would let any member rewrite the `members` map and add or
+      // promote whoever they liked. Requiring a subcollection name first makes
+      // the shortest path this can match `{subcollection}/{docId}`.
+      //
+      // This costs one `get()` on the organization document per operation.
+      // Rules evaluation caches it for the duration of a request and it is
+      // well within the free tier, but it is the reason to authorize the
+      // subtree in one place rather than per collection.
+      match /{subcollection}/{documents=**} {
+        allow read, write: if userIsMemberByOrganizationId(organizationId);
       }
-
-      match /teams/{teamId} {
-         allow read: if true;
-         allow update: if true;
-
-        match /users/{userId} {
-         allow read: if true;
-         allow update: if true;
-        }
-        
-      }
-         
     }
 
+    // Board members are shown by name and avatar, which means reading the
+    // profile of somebody who is not in your organization. Profiles are
+    // written server side only.
     match /users/{user} {
+      allow read: if true;
+    }
+
+    // Reference data, read on public pages and on the signed-out demo board.
+    // Seeded by the self-hoster; not writable from a browser.
+    match /tags/{tag} {
+      allow read: if true;
+    }
+
+    match /icebreakers/{icebreaker} {
       allow read: if true;
     }
 
@@ -123,10 +176,14 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    match /actions/{organization} {
-      allow read;
-      allow update: if userIsMemberByOrganizationId(organizationId);
-
+    // The demo board is a single shared sandbox that anybody can play with
+    // without signing in — that is the point of it, so it has to accept
+    // unauthenticated writes. Nothing real lives here: it is one fixed
+    // `demo/demo` document plus its comments, and it is not linked to any
+    // organization. If you self-host and would rather not expose a writable
+    // document, delete the `/demo` routes and drop this block.
+    match /demo/{document=**} {
+      allow read, write: if true;
     }
   }
 }
